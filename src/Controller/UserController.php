@@ -3,82 +3,83 @@
 namespace App\Controller;
 
 use App\Entity\User;
-use App\Form\UserType;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Serializer\SerializerInterface;
 
-#[Route('/user')]
 class UserController extends AbstractController
 {
-    #[Route('/', name: 'app_user_index', methods: ['GET'])]
-    public function index(EntityManagerInterface $entityManager): Response
+    #[Route('/new', name: 'app_user_new', methods: ['POST'])]
+    public function new(Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
-        $users = $entityManager
-            ->getRepository(User::class)
-            ->findAll();
 
-        return $this->render('user/index.html.twig', [
-            'users' => $users,
-        ]);
-    }
+        $postData = json_decode($request->getContent(), true);
+        $user = (new User())
+            ->setEmail($postData['email'])
+            ->setName($postData['name'])
+            ->setAge($postData['age'])
+            ->setSex($postData['sex'])
+            ->setBirthday($postData['birthday'])
+            ->setPhone($postData['phone']);
 
-    #[Route('/new', name: 'app_user_new', methods: ['GET', 'POST'])]
-    public function new(Request $request, EntityManagerInterface $entityManager): Response
-    {
-        $user = new User();
-        $form = $this->createForm(UserType::class, $user);
-        $form->handleRequest($request);
+        $entityManager->persist($user);
+        $entityManager->flush();
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($user);
-            $entityManager->flush();
-
-            return $this->redirectToRoute('app_user_index', [], Response::HTTP_SEE_OTHER);
-        }
-
-        return $this->render('user/new.html.twig', [
-            'user' => $user,
-            'form' => $form,
-        ]);
+        return new JsonResponse('Success', 200);
     }
 
     #[Route('/{id}', name: 'app_user_show', methods: ['GET'])]
-    public function show(User $user): Response
+    public function show(int $id, EntityManagerInterface $entityManager,  SerializerInterface $serializer): JsonResponse
     {
-        return $this->render('user/show.html.twig', [
-            'user' => $user,
-        ]);
-    }
-
-    #[Route('/{id}/edit', name: 'app_user_edit', methods: ['GET', 'POST'])]
-    public function edit(Request $request, User $user, EntityManagerInterface $entityManager): Response
-    {
-        $form = $this->createForm(UserType::class, $user);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->flush();
-
-            return $this->redirectToRoute('app_user_index', [], Response::HTTP_SEE_OTHER);
+        $user = $entityManager->getRepository(User::class)->find($id);
+        if (null === $user) {
+            return new JsonResponse('User not found', 404);
         }
 
-        return $this->render('user/edit.html.twig', [
-            'user' => $user,
-            'form' => $form,
-        ]);
+        $jsonContent = $serializer->serialize($user, 'json');
+
+        return new JsonResponse($jsonContent, 200, [], true);
     }
 
-    #[Route('/{id}', name: 'app_user_delete', methods: ['POST'])]
-    public function delete(Request $request, User $user, EntityManagerInterface $entityManager): Response
+    #[Route('/{id}', name: 'app_user_edit', methods: ['POST'])]
+    public function edit(Request $request, int $id, EntityManagerInterface $entityManager, SerializerInterface $serializer): JsonResponse
     {
-        if ($this->isCsrfTokenValid('delete'.$user->getId(), $request->getPayload()->get('_token'))) {
-            $entityManager->remove($user);
-            $entityManager->flush();
+
+        $user = $entityManager->getRepository(User::class)->find($id);
+        if (null === $user) {
+            return new JsonResponse('User not found', 404);
         }
 
-        return $this->redirectToRoute('app_user_index', [], Response::HTTP_SEE_OTHER);
+        $postData = json_decode($request->getContent(), true);
+
+        $user
+        ->setEmail($postData['email'])
+        ->setName($postData['name'])
+        ->setAge($postData['age'])
+        ->setSex($postData['sex'])
+        ->setBirthday($postData['birthday'])
+        ->setPhone($postData['phone']);
+
+        $entityManager->flush();
+
+        $jsonContent = $serializer->serialize($user, 'json');
+        return new JsonResponse($jsonContent, 200, [], true);
+
+    }
+
+    #[Route('/{id}', name: 'app_user_delete', methods: ['DELETE'])]
+    public function delete(int $id, EntityManagerInterface $entityManager): JsonResponse
+    {
+        $user = $entityManager->getRepository(User::class)->find($id);
+        if (null === $user) {
+            return new JsonResponse('User not found', 404);
+        }
+        $entityManager->remove($user);
+        $entityManager->flush();
+
+        return new JsonResponse('Success', 200);
     }
 }

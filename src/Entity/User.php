@@ -4,11 +4,12 @@ namespace App\Entity;
 
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Security\Core\User\UserInterface;
 
 #[ORM\Entity]
-#[ORM\Table(name: 'user')]
+#[ORM\Table(name: '`user`')]
 #[ORM\HasLifecycleCallbacks]
-class User
+class User implements UserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -157,5 +158,20 @@ class User
         $this->updatedAt = $updatedAt;
 
         return $this;
+    }
+
+    public function getRoles(): array
+    {
+        return [];
+    }
+
+    public function eraseCredentials()
+    {
+
+    }
+
+    public function getUserIdentifier(): string
+    {
+        return $this->id ?? '';
     }
 }
