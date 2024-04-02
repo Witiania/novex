@@ -4,12 +4,14 @@ namespace App\Controller;
 
 use App\DTO\UserDTO;
 use App\DTO\UserEditDTO;
+use App\Repository\UserRepository;
 use App\Service\User\UserService;
 use Exception;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
 use Symfony\Component\Routing\Attribute\Route;
+use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 #[Route('/api/user', name: 'api_user')]
@@ -71,5 +73,13 @@ class UserController extends AbstractController
         $this->userService->deleteUser($id);
 
         return new JsonResponse('Success', 200);
+    }
+
+    #[Route('/', name: 'api_user_showAll', methods: ['GET'])]
+    public function showAll(): JsonResponse
+    {
+        $jsonResult = $this->userService->showAllUsers();
+
+        return new JsonResponse($jsonResult, 200, [], true);
     }
 }

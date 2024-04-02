@@ -119,4 +119,10 @@ class UserService
         }
         $this->userRepository->delete($user);
     }
+
+    public function showAllUsers(): string
+    {
+        $result = $this->userRepository->showAllUsers();
+        return $this->serializer->serialize($result, 'json');
+    }
 }
