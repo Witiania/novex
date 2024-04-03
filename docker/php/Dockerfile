@@ -10,8 +10,4 @@ WORKDIR /app
 
 COPY . .
 
-COPY ./docker/php/entrypoint.sh /entrypoint.sh
-
-RUN chmod +x /entrypoint.sh
-
-CMD php-fpm -F; /entrypoint.sh
+CMD php-fpm -F;
